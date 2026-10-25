@@ -1,0 +1,57 @@
+#!/bin/bash
+
+Help() {
+    echo "Help summoning pets."
+    echo ""
+    echo "Format:"
+    echo "pet -h                           Prints help."
+    echo "pet -f \<path\>                  Summons from the path."
+    echo "pet -f \<path\> -d \<dimension\> Summons from the path with the specified dimension. Defaults to \"pet\""
+    echo ""
+    echo "Options: "
+    echo "h   Print help."
+    echo "f   Specify file."
+    echo "d   Specify dimensions. These dimensions should be configured WM config-side."
+}
+
+
+Spawn() {
+    mpv --no-border --loop=inf --background=none --script-opts=osc-windowcontrols=no,osc-visibility=never "$1"
+}
+
+Src=""
+Suffix=""
+while getopts ":hf:d:" option; do
+    case $option in
+        h)
+            Help
+            exit 0;;
+        f)
+            Src=$OPTARG;;
+        d)
+            Suffix=$OPTARG;;
+        \?)
+            echo "Invalid option given."
+            Help
+            exit 1;;
+    esac
+done
+if [[ $Src == "" ]]; then
+    echo "No source passed."
+    Help
+    exit 1
+fi
+if [[ $Suffix == "" ]]; then
+    echo "No dimension passed. Assuming \"pet\"."
+    Suffix="pet"
+fi
+Pname=${Src##*/}
+Tmp=$(mktemp /tmp/XXXXXXXX$Suffix.${Pname##*.})
+Del() {
+    if ! [ -z "$Tmp" ]; then
+        rm "$Tmp"
+    fi
+}
+trap Del EXIT
+cp "$Src" "$Tmp"
+Spawn "$Tmp"
